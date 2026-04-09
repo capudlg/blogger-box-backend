@@ -1,59 +1,44 @@
 package com.dauphine.blogger.services.impl;
 
 import com.dauphine.blogger.models.Post;
+import com.dauphine.blogger.repositories.PostRepository;
 import com.dauphine.blogger.services.PostService;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Comparator;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class PostServiceImpl implements PostService {
 
-    private final List<Post> temporaryPosts;
+    private final PostRepository repository;
 
-    public PostServiceImpl() {
-        this.temporaryPosts = new ArrayList<>();
-        // Ajout de fausses données (avec des dates au format ISO AAAA-MM-JJ pour faciliter le tri)
-        UUID catId = UUID.randomUUID();
-        temporaryPosts.add(new Post(UUID.randomUUID(), "Post 1", "Contenu 1", "2024-03-20", catId));
-        temporaryPosts.add(new Post(UUID.randomUUID(), "Post 2", "Contenu 2", "2024-03-24", catId)); // Le plus récent
+    public PostServiceImpl(PostRepository repository) {
+        this.repository = repository;
     }
 
     @Override
     public List<Post> getAll() {
-        // Retrieve all posts ordered by creation date (to show latest post, in home page)
-        return temporaryPosts.stream()
-                // Tri décroissant (du plus récent au plus ancien)
-                .sorted(Comparator.comparing(Post::getCreatedDate).reversed())
-                .collect(Collectors.toList());
+        // Utilise la méthode de tri définie dans le repository
+        return repository.findAllByOrderByCreatedDateDesc();
     }
 
     @Override
     public List<Post> getAllByCategoryId(UUID categoryId) {
-        // Retrieve all posts per a category
-        return temporaryPosts.stream()
-                .filter(post -> categoryId.equals(post.getCategoryId()))
-                .collect(Collectors.toList());
+        return repository.findAllByCategoryId(categoryId);
     }
 
     @Override
     public Post getById(UUID id) {
-        return temporaryPosts.stream()
-                .filter(post -> id.equals(post.getId()))
-                .findFirst()
-                .orElse(null);
+        // Renvoie l'objet s'il existe, sinon null
+        return repository.findById(id).orElse(null);
     }
 
     @Override
     public Post create(String title, String content, UUID categoryId) {
-        Post post = new Post(UUID.randomUUID(), title, content, LocalDate.now().toString(), categoryId);
-        temporaryPosts.add(post);
-        return post;
+        Post post = new Post(UUID.randomUUID(), title, content, LocalDateTime.now().toString(), categoryId);
+        return repository.save(post);
     }
 
     @Override
@@ -62,12 +47,17 @@ public class PostServiceImpl implements PostService {
         if (post != null) {
             post.setTitle(title);
             post.setContent(content);
+            return repository.save(post);
         }
-        return post;
+        return null;
     }
 
     @Override
     public boolean deleteById(UUID id) {
-        return temporaryPosts.removeIf(post -> id.equals(post.getId()));
+        if (repository.existsById(id)) {
+            repository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 }
