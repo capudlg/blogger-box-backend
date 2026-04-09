@@ -1,43 +1,38 @@
 package com.dauphine.blogger.services.impl;
 
 import com.dauphine.blogger.models.Category;
+import com.dauphine.blogger.repositories.CategoryRepository;
 import com.dauphine.blogger.services.CategoryService;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 public class CategoryServiceImpl implements CategoryService {
 
-    private final List<Category> temporaryCategories;
+    // On remplace la liste par le Repository JPA
+    private final CategoryRepository repository;
 
-    public CategoryServiceImpl() {
-        this.temporaryCategories = new ArrayList<>();
-        // Initialisation de quelques données fictives
-        temporaryCategories.add(new Category(UUID.randomUUID(), "Dauphine"));
-        temporaryCategories.add(new Category(UUID.randomUUID(), "Spring Boot"));
+    public CategoryServiceImpl(CategoryRepository repository) {
+        this.repository = repository;
     }
 
     @Override
     public List<Category> getAll() {
-        return temporaryCategories;
+        return repository.findAll(); // Requête SQL générée : SELECT * FROM category
     }
 
     @Override
     public Category getById(UUID id) {
-        return temporaryCategories.stream()
-                .filter(category -> id.equals(category.getId()))
-                .findFirst()
-                .orElse(null);
+        // findById renvoie un "Optional". S'il ne trouve rien, on renvoie null pour le moment.
+        return repository.findById(id).orElse(null);
     }
 
     @Override
     public Category create(String name) {
         Category category = new Category(UUID.randomUUID(), name);
-        temporaryCategories.add(category);
-        return category;
+        return repository.save(category); // Requête SQL générée : INSERT INTO category ...
     }
 
     @Override
@@ -45,12 +40,17 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = getById(id);
         if (category != null) {
             category.setName(name);
+            return repository.save(category); // Si l'ID existe, save() fera un UPDATE
         }
-        return category;
+        return null;
     }
 
     @Override
     public boolean deleteById(UUID id) {
-        return temporaryCategories.removeIf(category -> id.equals(category.getId()));
+        if (getById(id) != null) {
+            repository.deleteById(id); // Requête SQL générée : DELETE FROM category WHERE id = ?
+            return true;
+        }
+        return false;
     }
 }
