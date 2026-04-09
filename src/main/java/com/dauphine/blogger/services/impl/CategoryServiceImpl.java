@@ -24,6 +24,11 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    public List<Category> getAllLikeName(String name) {
+        return repository.findAllLikeName(name);
+    }
+
+    @Override
     public Category getById(UUID id) {
         // findById renvoie un "Optional". S'il ne trouve rien, on renvoie null pour le moment.
         return repository.findById(id).orElse(null);

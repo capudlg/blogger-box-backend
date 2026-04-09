@@ -28,9 +28,15 @@ public class CategoryController {
     }
 
     @GetMapping
-    @Operation(summary = "Retrieve all categories")
-    public List<Category> retrieveAllCategories() {
-        return categoryService.getAll();
+    @Operation(
+            summary = "Get all categories",
+            description = "Retrieve all categories or filter like name"
+    ) // [cite: 421, 422, 423, 424, 425]
+    public List<Category> getAll(@RequestParam(required = false) String name) {
+        List<Category> categories = name == null || name.isBlank()
+                ? categoryService.getAll()
+                : categoryService.getAllLikeName(name); // [cite: 426, 427, 428]
+        return categories; // [cite: 429]
     }
 
     @GetMapping("/{id}")

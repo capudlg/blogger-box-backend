@@ -3,8 +3,18 @@ package com.dauphine.blogger.repositories;
 import com.dauphine.blogger.models.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import java.util.UUID;
+import java.util.List;
 
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, UUID> {
+
+    @Query("""
+    SELECT category
+    FROM Category category
+    WHERE UPPER(category.name) LIKE UPPER(CONCAT('%', :name, '%'))
+    """)
+    List<Category> findAllLikeName(@Param("name") String name); // [cite: 411, 412, 413, 414, 415, 416]
 }

@@ -4,6 +4,7 @@ import com.dauphine.blogger.dto.CreationPostRequest;
 import com.dauphine.blogger.models.Post;
 import com.dauphine.blogger.services.PostService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,9 +23,19 @@ public class PostController {
     }
 
     @GetMapping
-    @Operation(summary = "Retrieve all posts ordered by creation date")
-    public List<Post> retrieveAllPosts() {
-        return service.getAll();
+    @Operation(
+            summary = "Retrieve all posts",
+            description = "Renvoie tous les articles, ou filtre par titre/contenu si une valeur est fournie"
+    )
+    public List<Post> retrieveAllPosts(
+            @Parameter(description = "Mot-clé à chercher dans le titre ou le contenu")
+            @RequestParam(required = false) String value) { // Le nom correspond à ?value=...
+
+        List<Post> posts = value == null || value.isBlank()
+                ? service.getAll()
+                : service.getAllByTitleOrContent(value);
+
+        return posts;
     }
 
     @GetMapping("/{id}")

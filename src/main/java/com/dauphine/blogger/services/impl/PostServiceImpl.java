@@ -23,6 +23,10 @@ public class PostServiceImpl implements PostService {
         // Utilise la méthode de tri définie dans le repository
         return repository.findAllByOrderByCreatedDateDesc();
     }
+    @Override
+    public List<Post> getAllByTitleOrContent(String value) {
+        return repository.findAllByTitleOrContent(value);
+    }
 
     @Override
     public List<Post> getAllByCategoryId(UUID categoryId) {
