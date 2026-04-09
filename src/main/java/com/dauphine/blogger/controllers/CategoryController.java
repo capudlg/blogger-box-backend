@@ -3,6 +3,8 @@ package com.dauphine.blogger.controllers;
 import com.dauphine.blogger.dto.CreationCategoryRequest;
 import com.dauphine.blogger.models.Category;
 import com.dauphine.blogger.models.Post;
+import com.dauphine.blogger.services.CategoryService;
+import com.dauphine.blogger.services.PostService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,48 +14,56 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/v1/categories")
-@Tag(name = "Category API", description = "Endpoints for managing categories")
+@RequestMapping("/v1/categories") // Versioning et pluriel [cite: 3013, 3078]
+@Tag(name = "Category API", description = "Endpoints pour la gestion des catégories")
 public class CategoryController {
 
+    private final CategoryService categoryService;
+    private final PostService postService;
+
+    // Injection des deux services pour gérer les sous-ressources [cite: 3371-3375, 3387-3389]
+    public CategoryController(CategoryService categoryService, PostService postService) {
+        this.categoryService = categoryService;
+        this.postService = postService;
+    }
+
     @GetMapping
-    @Operation(summary = "Retrieve all categories", description = "Returns a list of all categories")
+    @Operation(summary = "Retrieve all categories")
     public List<Category> retrieveAllCategories() {
-        return null; // TODO: Implement
+        return categoryService.getAll();
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Retrieve a category by id", description = "Returns a category based on its UUID")
+    @Operation(summary = "Retrieve a category by id")
     public Category retrieveCategoryById(
-            @Parameter(description = "Category UUID") @PathVariable UUID id) {
-        return null; // TODO: Implement
+            @Parameter(description = "ID de la catégorie") @PathVariable UUID id) {
+        return categoryService.getById(id);
     }
 
-    @GetMapping("/{id}/posts")
-    @Operation(summary = "Retrieve all posts per a category", description = "Returns all posts belonging to a specific category")
+    @GetMapping("/{id}/posts") // Sous-ressource : posts d'une catégorie [cite: 3065-3068, 3122]
+    @Operation(summary = "Retrieve all posts per a category")
     public List<Post> retrievePostsByCategory(
-            @Parameter(description = "Category UUID") @PathVariable UUID id) {
-        return null; // TODO: Implement
+            @Parameter(description = "ID de la catégorie") @PathVariable UUID id) {
+        return postService.getAllByCategoryId(id);
     }
 
     @PostMapping
     @Operation(summary = "Create a new category")
     public Category createCategory(@RequestBody CreationCategoryRequest request) {
-        return null; // TODO: Implement
+        return categoryService.create(request.getName());
     }
 
-    @PutMapping("/{id}") // Or @PatchMapping depending on partial/full update
+    @PutMapping("/{id}")
     @Operation(summary = "Update the name of a category")
     public Category updateCategory(
-            @Parameter(description = "Category UUID") @PathVariable UUID id,
+            @PathVariable UUID id,
             @RequestBody CreationCategoryRequest request) {
-        return null; // TODO: Implement
+        return categoryService.update(id, request.getName());
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete an existing category")
-    public void deleteCategory(
-            @Parameter(description = "Category UUID") @PathVariable UUID id) {
-        // TODO: Implement
+    public void deleteCategory(@PathVariable UUID id) {
+        categoryService.deleteById(id);
     }
 }
