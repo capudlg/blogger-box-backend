@@ -1,5 +1,6 @@
 package com.dauphine.blogger.services.impl;
 
+import com.dauphine.blogger.exceptions.CategoryNotFoundByIdException;
 import com.dauphine.blogger.models.Category;
 import com.dauphine.blogger.repositories.CategoryRepository;
 import com.dauphine.blogger.services.CategoryService;
@@ -11,7 +12,6 @@ import java.util.UUID;
 @Service
 public class CategoryServiceImpl implements CategoryService {
 
-    // On remplace la liste par le Repository JPA
     private final CategoryRepository repository;
 
     public CategoryServiceImpl(CategoryRepository repository) {
@@ -20,7 +20,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public List<Category> getAll() {
-        return repository.findAll(); // Requête SQL générée : SELECT * FROM category
+        return repository.findAll();
     }
 
     @Override
@@ -29,33 +29,28 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public Category getById(UUID id) {
-        // findById renvoie un "Optional". S'il ne trouve rien, on renvoie null pour le moment.
-        return repository.findById(id).orElse(null);
+    public Category getById(UUID id) throws CategoryNotFoundByIdException {
+        return repository.findById(id)
+                .orElseThrow(() -> new CategoryNotFoundByIdException(id));
     }
 
     @Override
     public Category create(String name) {
         Category category = new Category(UUID.randomUUID(), name);
-        return repository.save(category); // Requête SQL générée : INSERT INTO category ...
+        return repository.save(category);
     }
 
     @Override
-    public Category update(UUID id, String name) {
+    public Category update(UUID id, String name) throws CategoryNotFoundByIdException {
         Category category = getById(id);
-        if (category != null) {
-            category.setName(name);
-            return repository.save(category); // Si l'ID existe, save() fera un UPDATE
-        }
-        return null;
+        category.setName(name);
+        return repository.save(category);
     }
 
     @Override
-    public boolean deleteById(UUID id) {
-        if (getById(id) != null) {
-            repository.deleteById(id); // Requête SQL générée : DELETE FROM category WHERE id = ?
-            return true;
-        }
-        return false;
+    public boolean deleteById(UUID id) throws CategoryNotFoundByIdException {
+        Category category = getById(id);
+        repository.delete(category);
+        return true;
     }
 }

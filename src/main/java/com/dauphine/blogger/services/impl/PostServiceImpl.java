@@ -1,5 +1,6 @@
 package com.dauphine.blogger.services.impl;
 
+import com.dauphine.blogger.exceptions.PostNotFoundByIdException;
 import com.dauphine.blogger.models.Post;
 import com.dauphine.blogger.repositories.PostRepository;
 import com.dauphine.blogger.services.PostService;
@@ -34,9 +35,9 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Post getById(UUID id) {
-        // Renvoie l'objet s'il existe, sinon null
-        return repository.findById(id).orElse(null);
+    public Post getById(UUID id) throws PostNotFoundByIdException {
+        return repository.findById(id)
+                .orElseThrow(() -> new PostNotFoundByIdException(id));
     }
 
     @Override
@@ -46,22 +47,18 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Post update(UUID id, String title, String content) {
+    public Post update(UUID id, String title, String content) throws PostNotFoundByIdException {
         Post post = getById(id);
-        if (post != null) {
-            post.setTitle(title);
-            post.setContent(content);
-            return repository.save(post);
-        }
-        return null;
+        post.setTitle(title);
+        post.setContent(content);
+        return repository.save(post);
     }
 
+    // AJOUT DU THROWS ICI
     @Override
-    public boolean deleteById(UUID id) {
-        if (repository.existsById(id)) {
-            repository.deleteById(id);
-            return true;
-        }
-        return false;
+    public boolean deleteById(UUID id) throws PostNotFoundByIdException {
+        Post post = getById(id);
+        repository.delete(post);
+        return true;
     }
 }

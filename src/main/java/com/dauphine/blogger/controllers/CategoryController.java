@@ -1,75 +1,66 @@
 package com.dauphine.blogger.controllers;
 
 import com.dauphine.blogger.dto.CreationCategoryRequest;
+import com.dauphine.blogger.exceptions.CategoryNotFoundByIdException;
 import com.dauphine.blogger.models.Category;
-import com.dauphine.blogger.models.Post;
 import com.dauphine.blogger.services.CategoryService;
-import com.dauphine.blogger.services.PostService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/v1/categories") // Versioning et pluriel [cite: 3013, 3078]
-@Tag(name = "Category API", description = "Endpoints pour la gestion des catégories")
+@RequestMapping("/v1/categories")
 public class CategoryController {
 
     private final CategoryService categoryService;
-    private final PostService postService;
 
-    // Injection des deux services pour gérer les sous-ressources [cite: 3371-3375, 3387-3389]
-    public CategoryController(CategoryService categoryService, PostService postService) {
+    public CategoryController(CategoryService categoryService) {
         this.categoryService = categoryService;
-        this.postService = postService;
     }
 
     @GetMapping
-    @Operation(
-            summary = "Get all categories",
-            description = "Retrieve all categories or filter like name"
-    ) // [cite: 421, 422, 423, 424, 425]
-    public List<Category> getAll(@RequestParam(required = false) String name) {
+    @Operation(summary = "Get all categories", description = "Retrieve all categories or filter like name")
+    public ResponseEntity<List<Category>> getAll(@RequestParam(required = false) String name) {
         List<Category> categories = name == null || name.isBlank()
                 ? categoryService.getAll()
-                : categoryService.getAllLikeName(name); // [cite: 426, 427, 428]
-        return categories; // [cite: 429]
+                : categoryService.getAllLikeName(name);
+        return ResponseEntity.ok(categories); // Statut 200 OK
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Retrieve a category by id")
-    public Category retrieveCategoryById(
-            @Parameter(description = "ID de la catégorie") @PathVariable UUID id) {
-        return categoryService.getById(id);
-    }
-
-    @GetMapping("/{id}/posts") // Sous-ressource : posts d'une catégorie [cite: 3065-3068, 3122]
-    @Operation(summary = "Retrieve all posts per a category")
-    public List<Post> retrievePostsByCategory(
-            @Parameter(description = "ID de la catégorie") @PathVariable UUID id) {
-        return postService.getAllByCategoryId(id);
+    @Operation(summary = "Get category by id", description = "Retrieve a category by id")
+    public ResponseEntity<Category> getById(@PathVariable UUID id) throws CategoryNotFoundByIdException {
+        Category category = categoryService.getById(id);
+        return ResponseEntity.ok(category); // Statut 200 OK
     }
 
     @PostMapping
-    @Operation(summary = "Create a new category")
-    public Category createCategory(@RequestBody CreationCategoryRequest request) {
-        return categoryService.create(request.getName());
+    @Operation(summary = "Create new category")
+    public ResponseEntity<Category> createCategory(@RequestBody CreationCategoryRequest request) {
+        Category category = categoryService.create(request.getName());
+        // Statut 201 Created avec l'URI de la nouvelle ressource
+        return ResponseEntity
+                .created(URI.create("v1/categories/" + category.getId()))
+                .body(category);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Update the name of a category")
-    public Category updateCategory(
+    @Operation(summary = "Update an existing category")
+    public ResponseEntity<Category> updateCategory(
             @PathVariable UUID id,
-            @RequestBody CreationCategoryRequest request) {
-        return categoryService.update(id, request.getName());
+            @RequestBody CreationCategoryRequest request) throws CategoryNotFoundByIdException {
+        Category updatedCategory = categoryService.update(id, request.getName());
+        return ResponseEntity.ok(updatedCategory); // Statut 200 OK
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete an existing category")
-    public void deleteCategory(@PathVariable UUID id) {
+    public ResponseEntity<Void> deleteCategory(@PathVariable UUID id) throws CategoryNotFoundByIdException {
         categoryService.deleteById(id);
+        return ResponseEntity.noContent().build(); // Statut 204 No Content
     }
 }
