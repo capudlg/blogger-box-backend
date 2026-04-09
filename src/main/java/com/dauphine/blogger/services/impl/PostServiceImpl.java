@@ -37,7 +37,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Post create(String title, String content, UUID categoryId) {
-        Post post = new Post(UUID.randomUUID(), title, content, LocalDateTime.now().toString(), categoryId);
+        Post post = new Post(UUID.randomUUID(), title, content, LocalDateTime.now(), categoryId);
         return repository.save(post);
     }
 
